@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SClaw First AI Client Prototype</title>
+<style>
+  :root{
+    --bg:#f4f7fb;
+    --panel:#ffffff;
+    --panel-2:#f7f9fc;
+    --line:#dfe6ef;
+    --text:#172033;
+    --muted:#6c778a;
+    --muted2:#98a3b5;
+    --primary:#3269ff;
+    --primary-dark:#244ccd;
+    --primary-soft:#e9efff;
+    --green:#15a879;
+    --green-soft:#e8f7f1;
+    --red:#e15b64;
+    --red-soft:#fff0f1;
+    --amber:#d88b16;
+    --amber-soft:#fff4dc;
+    --purple:#835cff;
+    --purple-soft:#f0ebff;
+    --shadow: 0 18px 45px rgba(19,34,61,.12);
+    --shadow-soft: 0 8px 22px rgba(32,45,74,.08);
+    --radius:18px;
+    --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:var(--font);color:var(--text);background:linear-gradient(135deg,#eef3ff 0%,#f8fbff 52%,#edf6f5 100%);}
+  body{overflow:hidden}
+  .app{height:100vh;width:100vw;display:grid;grid-template-columns:268px 1fr 376px;grid-template-rows:64px 1fr;}
+  .sidebar{grid-row:1/3;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border-right:1px solid var(--line);padding:18px 14px 14px;display:flex;flex-direction:column;gap:14px;min-width:0;}
+  .brand{height:36px;display:flex;align-items:center;gap:10px;padding:0 8px 8px;border-bottom:1px solid var(--line)}
+  .logo{width:32px;height:32px;border-radius:11px;background:linear-gradient(135deg,#1f5eff,#8c65ff);display:grid;place-items:center;color:white;font-weight:800;box-shadow:0 8px 16px rgba(50,105,255,.24)}
+  .brand-title{font-size:15px;font-weight:760;line-height:1.05}
+  .brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .new-chat{height:40px;border:0;border-radius:13px;background:var(--primary);color:white;font-weight:720;font-size:14px;box-shadow:0 12px 24px rgba(50,105,255,.24);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+  .new-chat:hover{background:var(--primary-dark)}
+  .search{height:36px;border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--muted);font-size:12px}
+  .side-section{display:flex;flex-direction:column;gap:6px}
+  .section-title{font-size:11px;color:#8994a6;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px}
+  .side-item{height:34px;border-radius:11px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;color:#2a3448;font-size:13px;cursor:pointer}
+  .side-item .left{display:flex;align-items:center;gap:8px;min-width:0}
+  .side-item:hover,.side-item.active{background:#eef3ff;color:#1f4fd8;font-weight:650}
+  .side-item.disabled{opacity:.45;cursor:default;background:transparent;color:#536071}
+  .count{min-width:20px;height:20px;border-radius:9px;background:#edf2f9;color:#6b778b;font-size:11px;display:grid;place-items:center;font-weight:700}
+  .history-list{display:flex;flex-direction:column;gap:3px;max-height:162px;overflow:hidden}
+  .history-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+  .compute{border:1px solid var(--line);border-radius:14px;padding:8px;background:#fff}
+  .compute-head{display:flex;align-items:center;justify-content:space-between;height:28px;padding:0 4px 5px;color:#354056;font-size:13px;font-weight:760}
+  .side-footer{margin-top:auto;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+  .setting-btn{height:38px;border:1px solid var(--line);border-radius:13px;background:#fff;color:#273044;display:flex;align-items:center;gap:8px;padding:0 10px;font-weight:650;cursor:pointer}
+  .setting-btn:hover{border-color:#bcc9dc;background:#f8fbff}
+  .topbar{grid-column:2/4;background:rgba(255,255,255,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;min-width:0}
+  .top-left{display:flex;align-items:center;gap:10px;min-width:0}
+  .breadcrumb{font-weight:760;color:#263249;font-size:15px;display:flex;align-items:center;gap:8px;min-width:0}
+  .command-btn{height:36px;min-width:310px;border:1px solid var(--line);border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 12px;color:#7a8596;font-size:13px;cursor:pointer;box-shadow:var(--shadow-soft)}
+  .kbd{height:22px;min-width:50px;border-radius:8px;border:1px solid #d9e1ee;background:#f8fafc;color:#6a7485;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .chip{height:34px;border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 10px;color:#344052;font-size:13px;cursor:pointer}
+  .chip.weak{background:var(--amber-soft);border-color:#ffd58b;color:#8a5b0c}
+  .dot{width:8px;height:8px;border-radius:999px;background:var(--green)}
+  .user-chip{height:36px;border-radius:14px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 8px 0 6px;font-size:13px;color:#344052;cursor:pointer}
+  .avatar{width:26px;height:26px;border-radius:10px;background:linear-gradient(135deg,#7c5cff,#2cc4aa);display:grid;place-items:center;color:white;font-weight:800;font-size:12px}
+  .main{grid-column:2;grid-row:2;min-width:0;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,rgba(247,250,255,.74),rgba(242,247,252,.96));}
+  .conversation{flex:1;overflow:auto;padding:24px 26px 16px;display:flex;flex-direction:column;gap:16px}
+  .hero{border:1px solid #e0e8f5;background:rgba(255,255,255,.82);border-radius:24px;padding:22px;box-shadow:var(--shadow-soft);}
+  .hero-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .hero h1{margin:0;font-size:25px;letter-spacing:-.02em;line-height:1.15}
+  .hero p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.55;max-width:720px}
+  .health-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .status-pill{height:30px;border-radius:999px;display:flex;align-items:center;gap:7px;padding:0 10px;font-size:12px;font-weight:650;border:1px solid transparent;background:#f1f5fb;color:#445066}
+  .status-pill.ok{background:var(--green-soft);color:#0d7555;border-color:#bde9d7}
+  .status-pill.warn{background:var(--amber-soft);color:#8a5b0c;border-color:#ffdb93}
+  .status-pill.info{background:var(--primary-soft);color:#2451d0;border-color:#cad7ff}
+  .quick-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+  .quick-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:13px 14px;min-height:88px;cursor:pointer;transition:.15s ease;}
+  .quick-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft);border-color:#c8d4e6}
+  .quick-title{font-weight:760;font-size:13px;margin-bottom:6px;display:flex;gap:7px;align-items:center}
+  .quick-desc{font-size:12px;color:var(--muted);line-height:1.45}
+  .msg{display:flex;gap:12px;max-width:930px}
+  .msg.ai{align-self:flex-start}.msg.user{align-self:flex-end;flex-direction:row-reverse}
+  .bubble{border-radius:20px;padding:14px 16px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-soft);font-size:14px;line-height:1.55}
+  .user .bubble{background:#315fff;color:white;border-color:#315fff;box-shadow:0 12px 26px rgba(49,95,255,.22)}
+  .msg-avatar{width:32px;height:32px;border-radius:12px;background:#eaf0ff;display:grid;place-items:center;color:#315fff;font-weight:800;flex-shrink:0}
+  .user .msg-avatar{background:#243a7e;color:white}
+  .cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .entity-card{border:1px solid #dce5f2;border-radius:16px;background:#fbfdff;padding:13px;cursor:pointer;transition:.15s ease;min-width:0}
+  .entity-card:hover,.entity-card.selected{border-color:#9eb7ff;background:#f4f7ff;box-shadow:0 8px 18px rgba(50,105,255,.10)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .card-name{font-size:13px;font-weight:780;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tag{height:22px;border-radius:999px;padding:0 8px;display:inline-flex;align-items:center;font-size:11px;font-weight:760;white-space:nowrap}
+  .tag.red{background:var(--red-soft);color:#bd3c45}.tag.green{background:var(--green-soft);color:#087555}.tag.blue{background:var(--primary-soft);color:#2451d0}.tag.amber{background:var(--amber-soft);color:#8a5b0c}.tag.purple{background:var(--purple-soft);color:#6a43d8}
+  .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#5b6577}
+  .path-line{margin-top:12px;border:1px dashed #b8c6da;border-radius:13px;padding:10px 12px;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#394559;min-width:0}
+  .path-line span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .composer{padding:14px 24px 22px;border-top:1px solid rgba(223,230,239,.78);background:linear-gradient(180deg,rgba(250,252,255,.7),rgba(250,252,255,1));}
+  .composer-box{min-height:92px;border:1px solid #d3deed;border-radius:22px;background:#fff;box-shadow:0 20px 40px rgba(31,52,93,.10);display:flex;flex-direction:column;overflow:hidden}
+  .composer-input{flex:1;padding:15px 18px;color:#717d8f;font-size:14px}
+  .composer-tools{height:42px;border-top:1px solid #eef2f8;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 14px}
+  .tools-left{display:flex;gap:8px;align-items:center}.tool{height:28px;border:1px solid #e0e7f2;background:#f8fafc;border-radius:10px;padding:0 9px;font-size:12px;color:#596579;display:flex;align-items:center;gap:5px}.send{height:32px;border:0;border-radius:12px;background:#315fff;color:white;font-weight:750;padding:0 14px}
+  .context{grid-column:3;grid-row:2;background:rgba(255,255,255,.86);backdrop-filter:blur(18px);border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .context-head{height:62px;border-bottom:1px solid var(--line);padding:11px 14px 9px;display:flex;flex-direction:column;gap:8px}
+  .context-title-row{display:flex;align-items:center;justify-content:space-between}.context-title{font-size:14px;font-weight:800}.tiny{font-size:12px;color:var(--muted)}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:#edf2f8;border-radius:12px;padding:4px}
+  .tab{height:28px;border-radius:9px;display:grid;place-items:center;font-size:12px;color:#657187;cursor:pointer}.tab.active{background:#fff;color:#244fd1;font-weight:760;box-shadow:0 2px 8px rgba(46,64,99,.08)}
+  .context-body{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .panel-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px;box-shadow:var(--shadow-soft)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}.panel-title{font-size:13px;font-weight:800}.panel-link{font-size:12px;color:#315fff;font-weight:700;cursor:pointer}
+  .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{border:1px solid #ebf0f7;border-radius:13px;padding:10px;background:#fafcff}.metric-value{font-size:17px;font-weight:820}.metric-label{font-size:11px;color:var(--muted);margin-top:4px}
+  .list{display:flex;flex-direction:column;gap:8px}.list-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #eef2f7;border-radius:12px;padding:9px 10px;background:#fbfdff;min-width:0}.list-main{min-width:0}.list-title{font-size:12px;font-weight:760;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.list-sub{font-size:11px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.progress{height:8px;border-radius:99px;background:#edf2f7;overflow:hidden}.progress>span{display:block;height:100%;background:linear-gradient(90deg,#315fff,#7c5cff);border-radius:99px}.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.btn{height:34px;border-radius:12px;border:1px solid #dce5f2;background:#fff;font-weight:720;color:#344052;font-size:12px;cursor:pointer}.btn.primary{background:#315fff;border-color:#315fff;color:white}.btn.danger{background:var(--red-soft);color:#bd3c45;border-color:#ffd1d5}.btn:hover{filter:brightness(.985)}
+  .codebox{border:1px solid #e3eaf3;background:#f8fafc;border-radius:13px;padding:11px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:#4b5567;line-height:1.55;white-space:pre-wrap}.file-tree{font-size:12px;display:flex;flex-direction:column;gap:6px}.tree-row{height:28px;border-radius:9px;display:flex;align-items:center;gap:7px;padding:0 8px;color:#3a4659}.tree-row.active{background:#eef3ff;color:#244fd1;font-weight:760}.tree-row .indent{width:14px}.notice{border:1px solid #ffe0a5;background:#fff8e9;color:#875a0a;border-radius:13px;padding:10px 12px;font-size:12px;line-height:1.45}.empty{border:1px dashed #cad4e2;border-radius:14px;background:#fbfdff;padding:18px;text-align:center;color:#7a8596;font-size:12px}
+  .overlay{position:fixed;inset:0;background:rgba(20,31,52,.34);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;padding-top:82px;z-index:30}.overlay.show{display:flex}.command-modal{width:min(720px,calc(100vw - 48px));background:#fff;border:1px solid #dfe6ef;border-radius:24px;box-shadow:0 32px 88px rgba(16,26,46,.26);overflow:hidden}.cmd-input{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 18px;font-size:16px;color:#6c778a}.cmd-group{padding:14px 14px 18px}.cmd-title{font-size:11px;color:#8a95a8;letter-spacing:.05em;text-transform:uppercase;padding:0 8px 8px}.cmd-row{height:44px;border-radius:13px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;cursor:pointer}.cmd-row:hover,.cmd-row.active{background:#eef3ff}.cmd-left{display:flex;align-items:center;gap:10px}.cmd-name{font-size:14px;font-weight:700}.cmd-desc{font-size:12px;color:#717d8f;margin-top:2px}.cmd-key{font-size:12px;color:#8b96a7;border:1px solid #dce4ef;border-radius:8px;height:24px;display:grid;place-items:center;min-width:34px;background:#fafcff}.settings-modal{width:min(1080px,calc(100vw - 60px));height:min(760px,calc(100vh - 92px));background:#fff;border:1px solid #dfe6ef;border-radius:26px;box-shadow:0 32px 88px rgba(16,26,46,.25);display:grid;grid-template-columns:260px 1fr;overflow:hidden}.settings-nav{background:#f7f9fc;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:8px}.settings-main{padding:22px;overflow:auto}.settings-title{font-size:21px;font-weight:850;margin-bottom:4px}.settings-sub{color:var(--muted);font-size:13px;margin-bottom:20px}.settings-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px;margin-bottom:14px;box-shadow:var(--shadow-soft)}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{border:1px solid #e3eaf3;border-radius:14px;background:#fbfdff;padding:12px}.field-label{font-size:12px;color:#717d8f;margin-bottom:6px}.field-value{font-size:14px;font-weight:760;color:#253046}.switch{width:42px;height:24px;border-radius:999px;background:#315fff;position:relative;display:inline-block;vertical-align:middle}.switch:after{content:"";position:absolute;width:18px;height:18px;border-radius:99px;background:#fff;right:3px;top:3px}.close{border:0;background:#f0f3f8;width:34px;height:34px;border-radius:12px;cursor:pointer;color:#536071;font-weight:800}.hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:40;background:rgba(19,31,52,.86);color:#fff;border-radius:999px;padding:8px 14px;font-size:12px;box-shadow:0 10px 24px rgba(16,26,46,.22)}
+  @media(max-width:1180px){.app{grid-template-columns:238px 1fr 330px}.command-btn{min-width:230px}.quick-cards{grid-template-columns:1fr}.cards-row{grid-template-columns:1fr}.top-actions .weak{display:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">S</div><div><div class="brand-title">SClaw Client</div><div class="brand-sub">AI Computing Workspace</div></div></div>
+    <button class="new-chat" onclick="setPanel('overview')">＋ 新开对话</button>
+    <div class="search">⌕ 搜索消息记录 / jobId / 文件路径</div>
+    <section class="side-section">
+      <div class="section-title">SClaw 工作台</div>
+      <div class="history-list">
+        <div class="side-item active"><span class="left">💬 <span class="history-title">GPU 作业失败诊断</span></span><span class="count">2</span></div>
+        <div class="side-item"><span class="left">🧪 <span class="history-title">分子模拟输入准备</span></span></div>
+        <div class="side-item"><span class="left">📊 <span class="history-title">资源额度说明</span></span></div>
+        <div class="side-item"><span class="left">🗂️ <span class="history-title">下载输出文件</span></span></div>
+      </div>
+    </section>
+    <section class="side-section">
+      <div class="section-title">SClaw 能力</div>
+      <div class="side-item"><span class="left">✨ 技能</span><span class="count">12</span></div>
+      <div class="side-item"><span class="left">⏱️ 定时任务</span><span class="count">3</span></div>
+    </section>
+    <section class="compute">
+      <div class="compute-head"><span>▸ 计算功能</span><span class="tiny">默认收起</span></div>
+      <div class="side-item"><span class="left">🧩 应用</span></div>
+      <div class="side-item"><span class="left">📌 作业</span><span class="count">8</span></div>
+      <div class="side-item"><span class="left">📁 文件</span></div>
+      <div class="side-item"><span class="left">⌨️ Shell</span></div>
+      <div class="side-item"><span class="left">🖥️ 图形</span></div>
+      <div class="side-item"><span class="left">🔄 任务中心</span><span class="count">3</span></div>
+    </section>
+    <div class="side-footer">
+      <div class="notice">Gateway 正常运行。模型使用 Claude Sonnet 4.5。</div>
+      <button class="setting-btn" onclick="openOverlay('settings')">⚙ 设置中心</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <div class="top-left">
+      <div class="breadcrumb">SClaw First <span class="tiny">/ 默认主入口</span></div>
+      <button class="command-btn" onclick="openOverlay('command')"><span>⌕ 输入动作、模块、文件或 jobId</span><span class="kbd">⌘K</span></button>
+    </div>
+    <div class="top-actions">
+      <div class="chip weak">⬆ 发现 1 个弱更新</div>
+      <div class="chip" onclick="setPanel('task')"><span class="dot"></span> 3 个任务运行</div>
+      <div class="chip">🎧 支持</div>
+      <div class="user-chip"><div class="avatar">LY</div><span>李研</span>⌄</div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="conversation">
+      <section class="hero">
+        <div class="hero-row">
+          <div>
+            <h1>SClaw 智能计算助手</h1>
+            <p>描述计算目标、粘贴日志、拖入文件，SClaw 会把作业、文件、Shell、图形和任务中心作为可调用上下文。</p>
+          </div>
+          <span class="tag blue">恢复最近会话</span>
+        </div>
+        <div class="health-strip">
+          <span class="status-pill ok">● Gateway 运行中</span>
+          <span class="status-pill ok">● 资源可用</span>
+          <span class="status-pill warn">● 1 个失败作业待诊断</span>
+          <span class="status-pill info">● 区域 cn-north 正常</span>
+        </div>
+        <div class="quick-cards">
+          <div class="quick-card" onclick="setPanel('inspector')"><div class="quick-title">📌 诊断失败作业</div><div class="quick-desc">基于作业状态、队列、日志摘要给出重跑建议。</div></div>
+          <div class="quick-card" onclick="setPanel('file')"><div class="quick-title">📁 准备输入文件</div><div class="quick-desc">引用最近路径，拖拽到输入框，或打开文件页。</div></div>
+          <div class="quick-card" onclick="setPanel('task')"><div class="quick-title">🔄 查看任务进度</div><div class="quick-desc">跟踪上传、下载、跨域、压缩任务和关闭保护。</div></div>
+        </div>
+      </section>
+
+      <div class="msg user"><div class="msg-avatar">我</div><div class="bubble">帮我排查 job_2847 为什么失败，并准备一个重跑草稿。</div></div>
+      <div class="msg ai"><div class="msg-avatar">AI</div><div class="bubble">
+        我找到了一个失败作业和两段关键日志。初步原因是 CUDA 版本与运行镜像不匹配，同时输出目录有旧锁文件。可以先清理锁文件，再切换镜像后重跑。
+        <div class="cards-row">
+          <div class="entity-card selected" onclick="setPanel('inspector')">
+            <div class="card-top"><div class="card-name">job_2847 · gromacs-md-prod</div><span class="tag red">FAILED</span></div>
+            <div class="kv-grid"><div>区域：cn-north</div><div>队列：gpu-a100</div><div>更新时间：10:42</div><div>耗时：00:18:12</div></div>
+          </div>
+          <div class="entity-card" onclick="setPanel('inspector')">
+            <div class="card-top"><div class="card-name">stderr.log · 关键片段</div><span class="tag amber">LOG</span></div>
+            <div class="kv-grid"><div>类型：作业输出</div><div>风险：依赖冲突</div><div>来源：job_2847</div><div>时间：10:41</div></div>
+          </div>
+        </div>
+        <div class="path-line" onclick="setPanel('file')"><span>/workspaces/ly/gromacs/run-0429/output/</span><b>引用路径</b></div>
+      </div></div>
+    </div>
+    <div class="composer">
+      <div class="composer-box">
+        <div class="composer-input">输入计算目标、粘贴日志，或把右侧文件路径拖入这里……</div>
+        <div class="composer-tools"><div class="tools-left"><span class="tool">📎 文件</span><span class="tool">✨ 技能</span><span class="tool"># 引用上下文</span></div><button class="send">发送</button></div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="context">
+    <div class="context-head">
+      <div class="context-title-row"><div class="context-title" id="contextTitle">上下文面板</div><div class="tiny">跟随中央内容切换</div></div>
+      <div class="tabs"><div class="tab active" data-panel="overview">总览</div><div class="tab" data-panel="inspector">详情</div><div class="tab" data-panel="file">文件</div><div class="tab" data-panel="task">任务</div></div>
+    </div>
+    <div class="context-body" id="contextBody"></div>
+  </aside>
+</div>
+
+<div class="overlay" id="commandOverlay" onclick="overlayClick(event,'command')">
+  <div class="command-modal">
+    <div class="cmd-input">⌕ <span>输入动作、模块、文件、jobId 或设置项</span></div>
+    <div class="cmd-group">
+      <div class="cmd-title">建议动作</div>
+      <div class="cmd-row active"><div class="cmd-left"><span>💬</span><div><div class="cmd-name">新建 SClaw 对话</div><div class="cmd-desc">从空白会话开始</div></div></div><span class="cmd-key">Enter</span></div>
+      <div class="cmd-row"><div class="cmd-left"><span>📌</span><div><div class="cmd-name">打开作业 job_2847</div><div class="cmd-desc">查看详情、输出和重跑入口</div></div></div><span class="cmd-key">⌘1</span></div>
+      <div class="cmd-row"><div class="cmd-left"><span>📁</span><div><div class="cmd-name">查找文件 /workspaces/ly/gromacs</div><div class="cmd-desc">打开右侧文件工作区或旧文件模块</div></div></div><span class="cmd-key">⌘2</span></div>
+      <div class="cmd-row"><div class="cmd-left"><span>⌨️</span><div><div class="cmd-name">启动 Shell</div><div class="cmd-desc">在当前区域启动独立终端窗口</div></div></div><span class="cmd-key">⌘3</span></div>
+      <div class="cmd-row"><div class="cmd-left"><span>⚙</span><div><div class="cmd-name">打开设置：模型 Provider</div><div class="cmd-desc">配置默认模型、Gateway 与消息渠道</div></div></div><span class="cmd-key">⌘,</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay" onclick="overlayClick(event,'settings')">
+  <div class="settings-modal">
+    <nav class="settings-nav">
+      <div class="brand" style="border:0;padding:0 4px 10px"><div class="logo">S</div><div><div class="brand-title">设置中心</div><div class="brand-sub">低频配置与支持闭环</div></div></div>
+      <div class="side-item active"><span class="left">🔌 Gateway</span></div>
+      <div class="side-item"><span class="left">🤖 模型 Provider</span></div>
+      <div class="side-item"><span class="left">📂 工作空间目录</span></div>
+      <div class="side-item"><span class="left">✨ 技能与 Agent 偏好</span></div>
+      <div class="side-item"><span class="left">💬 消息渠道</span></div>
+      <div class="side-item"><span class="left">🎨 主题和语言</span></div>
+      <div class="side-item"><span class="left">⬇ 下载路径</span></div>
+      <div class="side-item"><span class="left">⬆ 更新与版本</span></div>
+      <div class="side-item"><span class="left">🧾 日志目录</span></div>
+      <div class="side-item"><span class="left">🎧 帮助反馈</span></div>
+      <div class="side-item"><span class="left">🛠 开发者诊断</span></div>
+    </nav>
+    <section class="settings-main">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div class="settings-title">SClaw Gateway</div><div class="settings-sub">控制本地服务启停、自动运行和恢复默认配置。</div></div><button class="close" onclick="closeOverlay('settings')">×</button></div>
+      <div class="settings-card">
+        <div class="panel-head"><div class="panel-title">服务状态</div><span class="tag green">运行中</span></div>
+        <div class="settings-grid">
+          <div class="field"><div class="field-label">自动运行</div><div class="field-value"><span class="switch"></span> 已开启</div></div>
+          <div class="field"><div class="field-label">当前端口</div><div class="field-value">127.0.0.1:38421</div></div>
+          <div class="field"><div class="field-label">默认模型</div><div class="field-value">Claude Sonnet 4.5</div></div>
+          <div class="field"><div class="field-label">工作空间</div><div class="field-value">~/SClaw/workspaces</div></div>
+        </div>
+        <div class="action-row"><button class="btn primary">重启 Gateway</button><button class="btn">恢复默认配置</button></div>
+      </div>
+      <div class="settings-card">
+        <div class="panel-head"><div class="panel-title">更新、日志与支持</div><span class="panel-link">查看更新说明</span></div>
+        <div class="list"><div class="list-row"><div class="list-main"><div class="list-title">客户端版本 v1.8.0-beta</div><div class="list-sub">发现弱更新 v1.8.1，可稍后安装</div></div><button class="btn">手动检查</button></div><div class="list-row"><div class="list-main"><div class="list-title">日志目录</div><div class="list-sub">~/Library/Logs/SClawClient</div></div><button class="btn">打开日志</button></div><div class="list-row"><div class="list-main"><div class="list-title">帮助文档 / 建议反馈 / 专属顾问</div><div class="list-sub">低频支持入口集中承载</div></div><button class="btn">进入</button></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="hint">可点击中央作业卡片、文件路径、顶部任务状态、命令菜单和左下设置切换原型状态</div>
+<script>
+const panels={
+  overview:{title:'总览 · 资源与作业状态',html:`
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">资源与账号</div><span class="tag green">健康</span></div><div class="metric-grid"><div class="metric"><div class="metric-value">2/4</div><div class="metric-label">可用集群</div></div><div class="metric"><div class="metric-value">86%</div><div class="metric-label">账号额度</div></div><div class="metric"><div class="metric-value">cn-north</div><div class="metric-label">当前区域</div></div><div class="metric"><div class="metric-value">A100</div><div class="metric-label">推荐队列</div></div></div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">作业优先摘要</div><span class="panel-link" onclick="setPanel('inspector')">查看详情</span></div><div class="list"><div class="list-row"><div class="list-main"><div class="list-title">job_2847 · gromacs-md-prod</div><div class="list-sub">失败 · cuda version mismatch</div></div><span class="tag red">FAILED</span></div><div class="list-row"><div class="list-main"><div class="list-title">job_2846 · prep-input</div><div class="list-sub">完成 · 10:18 更新</div></div><span class="tag green">DONE</span></div><div class="list-row"><div class="list-main"><div class="list-title">job_2845 · analysis</div><div class="list-sub">运行中 · gpu-a100</div></div><span class="tag blue">RUNNING</span></div></div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">传输任务</div><span class="panel-link" onclick="setPanel('task')">任务面板</span></div><div class="list"><div><div class="list-row"><div class="list-main"><div class="list-title">下载 output.tar.gz</div><div class="list-sub">62% · 剩余约 4 分钟</div></div></div><div class="progress"><span style="width:62%"></span></div></div><div><div class="list-row"><div class="list-main"><div class="list-title">压缩 run-0429</div><div class="list-sub">排队中</div></div></div><div class="progress"><span style="width:18%"></span></div></div></div></div>
+  `},
+  inspector:{title:'详情 · job_2847',html:`
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">作业状态</div><span class="tag red">FAILED</span></div><div class="metric-grid"><div class="metric"><div class="metric-value">job_2847</div><div class="metric-label">作业 ID</div></div><div class="metric"><div class="metric-value">gpu-a100</div><div class="metric-label">队列</div></div><div class="metric"><div class="metric-value">cn-north</div><div class="metric-label">区域</div></div><div class="metric"><div class="metric-value">10:42</div><div class="metric-label">更新时间</div></div></div><div class="action-row"><button class="btn primary">打开作业详情</button><button class="btn">查看输出</button></div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">日志摘要</div><span class="panel-link">插入对话</span></div><div class="codebox">stderr.log\nCUDA runtime version 12.3 detected\nContainer requires 11.8\nLock file exists: output/.run.lock\nExit code: 1</div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">AI 建议动作</div><span class="tag amber">需确认</span></div><div class="list"><div class="list-row"><div class="list-main"><div class="list-title">切换镜像到 cuda-12.3-runtime</div><div class="list-sub">匹配当前节点运行环境</div></div></div><div class="list-row"><div class="list-main"><div class="list-title">清理旧锁文件</div><div class="list-sub">/workspaces/ly/gromacs/run-0429/output/.run.lock</div></div></div><div class="list-row"><div class="list-main"><div class="list-title">生成重跑草稿</div><div class="list-sub">回填到中央输入框确认</div></div></div></div><div class="action-row"><button class="btn primary">生成重跑草稿</button><button class="btn">引用作业上下文</button></div></div>
+  `},
+  file:{title:'文件 · 路径工作区',html:`
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">当前路径</div><span class="panel-link">复制路径</span></div><div class="codebox">/workspaces/ly/gromacs/run-0429/output/</div><div class="action-row"><button class="btn primary">拖拽到输入框</button><button class="btn">打开文件页</button></div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">最近目录</div><span class="tag blue">可引用</span></div><div class="file-tree"><div class="tree-row active">📁 output/</div><div class="tree-row"><span class="indent"></span>📄 stderr.log</div><div class="tree-row"><span class="indent"></span>📄 stdout.log</div><div class="tree-row"><span class="indent"></span>📦 result.tar.gz</div><div class="tree-row">📁 input/</div><div class="tree-row">📁 scripts/</div></div></div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">路径操作</div><span class="tiny">一期能力</span></div><div class="list"><div class="list-row"><div class="list-main"><div class="list-title">引用路径到对话</div><div class="list-sub">用于 AI 分析请求</div></div><button class="btn">引用</button></div><div class="list-row"><div class="list-main"><div class="list-title">下载 result.tar.gz</div><div class="list-sub">触发右侧任务进度</div></div><button class="btn" onclick="setPanel('task')">下载</button></div><div class="list-row"><div class="list-main"><div class="list-title">权限状态</div><div class="list-sub">当前用户有读写权限</div></div><span class="tag green">OK</span></div></div></div>
+  `},
+  task:{title:'任务 · 长耗时操作',html:`
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">运行中任务</div><span class="tag blue">3</span></div><div class="list"><div><div class="list-row"><div class="list-main"><div class="list-title">下载 output.tar.gz</div><div class="list-sub">62% · 245MB / 392MB</div></div><button class="btn">详情</button></div><div class="progress"><span style="width:62%"></span></div></div><div><div class="list-row"><div class="list-main"><div class="list-title">跨域同步 input/</div><div class="list-sub">41% · cn-north → cn-east</div></div><button class="btn">暂停</button></div><div class="progress"><span style="width:41%"></span></div></div><div><div class="list-row"><div class="list-main"><div class="list-title">压缩 run-0429</div><div class="list-sub">排队中 · 等待文件锁释放</div></div><button class="btn">取消</button></div><div class="progress"><span style="width:18%"></span></div></div></div></div>
+    <div class="notice">关闭保护已启用。存在上传、下载、传输、Shell 等任务时，退出客户端前会二次确认。</div>
+    <div class="panel-card"><div class="panel-head"><div class="panel-title">任务失败处理</div><span class="panel-link">插入对话</span></div><div class="empty">暂无失败任务。出现失败时会显示原因摘要、重试入口和任务中心跳转。</div><div class="action-row"><button class="btn primary">打开任务中心</button><button class="btn">收起面板</button></div></div>
+  `}
+};
+let currentPanel='overview';
+function setPanel(name){
+  currentPanel=name;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.panel===name));
+  document.getElementById('contextTitle').textContent=panels[name].title;
+  document.getElementById('contextBody').innerHTML=panels[name].html;
+  document.querySelectorAll('.entity-card').forEach(c=>c.classList.remove('selected'));
+}
+function openOverlay(type){document.getElementById(type+'Overlay').classList.add('show')}
+function closeOverlay(type){document.getElementById(type+'Overlay').classList.remove('show')}
+function overlayClick(e,type){if(e.target.id===type+'Overlay') closeOverlay(type)}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setPanel(t.dataset.panel)));
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openOverlay('command')} if(e.key==='Escape'){closeOverlay('command');closeOverlay('settings')}});
+const params=new URLSearchParams(location.search);setPanel(params.get('panel')||'overview');const overlay=params.get('overlay');if(overlay) openOverlay(overlay);
+</script>
+</body>
+</html>
